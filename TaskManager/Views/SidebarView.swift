@@ -9,8 +9,8 @@ import SwiftUI
 
 struct SidebarView: View {
     
-    let userCreatedGroups: [TaskGroup]
-    @Binding var selection: TaskSection
+    @Binding var userCreatedGroups: [TaskGroup]
+    @Binding var selection: TaskSection?
     
     var body: some View {
         List(selection: $selection) {
@@ -22,17 +22,39 @@ struct SidebarView: View {
             }
             
             Section("Your Groups") {
-                ForEach(userCreatedGroups) { group in
-                    Label(group.title, systemImage: "folder")
-                        .tag(TaskSection.list(group))
+                ForEach($userCreatedGroups) { $group in
+                    HStack {
+                        Image(systemName: "folder")
+                        TextField("New Group", text: $group.title)
+                    }
+                    .tag(TaskSection.list(group))
+                    .contextMenu {
+                        Button("Delete", role: .destructive) {
+                            if let index = userCreatedGroups.firstIndex(where: { $0.id == group.id }) {
+                                userCreatedGroups.remove(at: index)
+                            }
+                        }
+                    }
                 }
             }
-            
+        }
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                let newGroup = TaskGroup(title: "New Group")
+                userCreatedGroups.append(newGroup)
+            } label: {
+                Label("Add Group", systemImage: "plus.circle.fill")
+            }
+            .buttonStyle(.borderless)
+            .foregroundColor(.accentColor)
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .keyboardShortcut(KeyEquivalent("a"), modifiers: .command)
         }
     }
 }
 
 #Preview {
-    SidebarView(userCreatedGroups: TaskGroup.examples(), selection: .constant(.all))
+    SidebarView(userCreatedGroups: .constant(TaskGroup.examples()), selection: .constant(.all))
         .listStyle(.sidebar)
 }
